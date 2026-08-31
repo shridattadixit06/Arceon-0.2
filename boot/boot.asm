@@ -1,6 +1,9 @@
 bits 16
 org 0x7c00
 
+CODE_SEG equ 0x08
+DATA_SEG equ 0x10
+
 start:
     cli
 
@@ -29,9 +32,15 @@ setup_gdt:
 
     lgdt [gdt_descriptor]
 
-hang:
-    hlt
-    jmp hang
+    ;Enabled Protected mode 
+
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    ;farjump to 32bit Code
+
+    jmp CODE_SEG:protected_mode
 
 
 message db 'Arceon 0.2', 0
@@ -68,6 +77,31 @@ gdt_descriptor:
     dw gdt_end - gdt_start - 1
     dd gdt_start
 
+;32bit code starts here
+
+bits 32
+protected_mode:
+
+    mov ax, DATA_SEG
+
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    mov esp, 0x90000
+
+
+    ;Write directly to VGA memory
+
+    mov byte [0xB8000], 'P'
+    mov byte [0xB8001], 0x07
+
+
+hang:
+    hlt
+    jmp hang
 
 times 510-($-$$) db 0
 dw 0xaa55
