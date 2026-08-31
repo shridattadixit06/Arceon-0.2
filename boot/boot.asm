@@ -81,7 +81,6 @@ gdt_descriptor:
 
 bits 32
 protected_mode:
-
     mov ax, DATA_SEG
 
     mov ds, ax
@@ -94,10 +93,26 @@ protected_mode:
 
 
     ;Write directly to VGA memory
-
-    mov byte [0xB8000], 'P'
+    mov byte [0xB8000], 'W'
     mov byte [0xB8001], 0x07
 
+    mov byte [0xB8002], 'e'
+    mov byte [0xB8003], 0x07
+
+    mov byte [0xB8004], 'l'
+    mov byte [0xB8005], 0x07
+
+    mov byte [0xB8006], 'c'
+    mov byte [0xB8007], 0x07
+
+    mov byte [0xB800A], 'o'
+    mov byte [0xB800B], 0x07
+
+    mov byte [0xB800C], 'm'
+    mov byte [0xB800D], 0x07
+
+    mov byte [0xB800E], 'e'
+    mov byte [0xB800F], 0x07
 
 hang:
     hlt
