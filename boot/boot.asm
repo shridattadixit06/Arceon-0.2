@@ -90,31 +90,62 @@ protected_mode:
     mov ss, ax
 
     mov esp, 0x90000
-
-    mov esi, message32
+    mov edi, 0xB8000
+    
+    ; Current column
+    xor ebx, ebx
+    
+    mov esi, message1
     call print_string
 
-message32 db 'Welcome to Arceon 0.2!', 0
+    mov esi, message2
+    call print_string
+
+message1 db 'Welcome to Arceon 0.2!',10, 0
+message2 db 'Hey',0
 
 hang:
     hlt
     jmp hang
 
 print_string:
-    mov edi, 0xB8000
-
-print_l:
     mov al, [esi]
+
     cmp al, 0
     je print_d
+
+    ; Newline check
+    cmp al, 10
+    je newline
 
     mov [edi], al
     mov byte [edi + 1], 0x07
 
-    add esi, 1
+    inc esi
     add edi, 2
+    inc ebx
 
-    jmp print_l
+    jmp print_string
+
+newline:
+
+    ; Number of columns remaining
+    mov eax, 80
+    sub eax, ebx
+
+    ; Convert columns to bytes
+    shl eax, 1
+
+    ; Move to beginning of next row
+    add edi, eax
+
+    ; Reset column
+    xor ebx, ebx
+
+    ; Move past newline character
+    inc esi
+
+    jmp print_string
 
 print_d:
     ret
