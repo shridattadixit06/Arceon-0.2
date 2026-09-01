@@ -91,32 +91,34 @@ protected_mode:
 
     mov esp, 0x90000
 
+    mov esi, message32
+    call print_string
 
-    ;Write directly to VGA memory
-    mov byte [0xB8000], 'W'
-    mov byte [0xB8001], 0x07
-
-    mov byte [0xB8002], 'e'
-    mov byte [0xB8003], 0x07
-
-    mov byte [0xB8004], 'l'
-    mov byte [0xB8005], 0x07
-
-    mov byte [0xB8006], 'c'
-    mov byte [0xB8007], 0x07
-
-    mov byte [0xB800A], 'o'
-    mov byte [0xB800B], 0x07
-
-    mov byte [0xB800C], 'm'
-    mov byte [0xB800D], 0x07
-
-    mov byte [0xB800E], 'e'
-    mov byte [0xB800F], 0x07
+message32 db 'Welcome to Arceon 0.2!', 0
 
 hang:
     hlt
     jmp hang
+
+print_string:
+    mov edi, 0xB8000
+
+print_l:
+    mov al, [esi]
+    cmp al, 0
+    je print_d
+
+    mov [edi], al
+    mov byte [edi + 1], 0x07
+
+    add esi, 1
+    add edi, 2
+
+    jmp print_l
+
+print_d:
+    ret
+
 
 times 510-($-$$) db 0
 dw 0xaa55
