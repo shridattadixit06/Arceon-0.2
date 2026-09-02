@@ -44,7 +44,8 @@ setup_gdt:
 
 
 message db 'Arceon 0.2', 0
-
+message1 db 'Welcome to Arceon 0.2!',10, 0
+message2 db 'Hey',0
 
 gdt_start:
 
@@ -77,6 +78,8 @@ gdt_descriptor:
     dw gdt_end - gdt_start - 1
     dd gdt_start
 
+
+
 ;32bit code starts here
 
 bits 32
@@ -101,8 +104,7 @@ protected_mode:
     mov esi, message2
     call print_string
 
-message1 db 'Welcome to Arceon 0.2!',10, 0
-message2 db 'Hey',0
+
 
 hang:
     hlt
