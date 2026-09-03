@@ -6,7 +6,7 @@ DATA_SEG equ 0x10
 
 start:
     cli
-
+    mov [boot_drive], dl
     xor ax, ax
     mov ds, ax
     mov es, ax
@@ -20,13 +20,50 @@ print_loop:
     mov al, [si]
 
     cmp al, 0
-    je setup_gdt
+    je load_kernel
 
     int 0x10
 
     inc si
     jmp print_loop
 
+load_kernel:
+
+    xor ax, ax
+    mov es, ax
+
+    mov bx, 0x8000
+
+    mov ah, 0x02
+    mov al, 0x01
+    mov ch, 0x00
+    mov cl, 0x02
+    mov dh, 0x00
+    mov dl, [boot_drive]
+
+    int 0x13
+
+    jc disk_error
+
+    jmp setup_gdt
+
+
+disk_error:
+
+    mov si, disk_error_message
+
+disk_error_loop:
+
+    mov ah, 0x0e
+    lodsb
+
+    cmp al, 0
+    je hang
+
+    int 0x10
+    jmp disk_error_loop
+
+disk_error_message db 'Disk read error', 0
 
 setup_gdt:
 
@@ -46,6 +83,7 @@ setup_gdt:
 message db 'Arceon 0.2', 0
 message1 db 'Welcome to Arceon 0.2!',10, 0
 message2 db 'Hey',0
+boot_drive db 0
 
 gdt_start:
 
