@@ -131,16 +131,8 @@ protected_mode:
     mov ss, ax
 
     mov esp, 0x90000
-    mov edi, 0xB8000
-    
-    ; Current column
-    xor ebx, ebx
-    
-    mov esi, message1
-    call print_string
 
-    mov esi, message2
-    call print_string
+    jmp 0x8000
 
 
 
