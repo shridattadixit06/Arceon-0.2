@@ -5,20 +5,11 @@ LD       = ld
 OBJCOPY  = objcopy
 QEMU     = qemu-system-i386
 
-# Compiler / Linker flags
-
-CFLAGS = -m32 \
-         -ffreestanding \
-         -fno-pie \
-         -fno-pic \
-         -fno-asynchronous-unwind-tables
-
-LDFLAGS = -m elf_i386 \
-          -T linker.ld
-
+# Compiler and linker flags
+CFLAGS = -m32 -ffreestanding -fno-pie -fno-pic -fno-asynchronous-unwind-tables
+LDFLAGS = -m elf_i386 -T linker.ld
 
 # Output files
-
 BOOT_BIN   = boot.bin
 ENTRY_OBJ  = entry.o
 KERNEL_OBJ = kernel.o
@@ -26,69 +17,46 @@ KERNEL_ELF = kernel.elf
 KERNEL_BIN = kernel.bin
 IMAGE      = arceon.img
 
+# Build limits
+MAX_KERNEL_SECTORS = 17
 
 # Default target
-
 all: $(IMAGE)
 
-
-# Bootloader
-
-$(BOOT_BIN): boot/boot.asm
-	$(ASM) -f bin $< -o $@
-
-
-# Kernel entry assembly
-
+# Assemble kernel entry
 $(ENTRY_OBJ): boot/entry.asm
 	$(ASM) -f elf32 $< -o $@
 
-
-# Kernel C code
-
+# Compile kernel
 $(KERNEL_OBJ): kernel/kernel.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-
 # Link kernel
-
 $(KERNEL_ELF): $(ENTRY_OBJ) $(KERNEL_OBJ) linker.ld
 	$(LD) $(LDFLAGS) -o $@ $(ENTRY_OBJ) $(KERNEL_OBJ)
 
-
-# Convert ELF → raw binary
-
+# Convert ELF to raw binary
 $(KERNEL_BIN): $(KERNEL_ELF)
 	$(OBJCOPY) -O binary $< $@
 
+# Assemble bootloader using actual kernel size
+$(BOOT_BIN): boot/boot.asm $(KERNEL_BIN) tools-build.sh
+	./tools-build.sh
 
-# Create disk image
-
+# Create disk image with enough room for the kernel
 $(IMAGE): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $(BOOT_BIN) $(KERNEL_BIN) > $(IMAGE)
-	truncate -s 1024 $(IMAGE)
-
+	truncate -s $$((512 + (($$(stat -c %s $(KERNEL_BIN)) + 511) / 512) * 512)) $(IMAGE)
 
 # Run in QEMU
-
 run: $(IMAGE)
 	$(QEMU) -drive format=raw,file=$(IMAGE)
 
-
-# Clean build files
-
+# Remove build artifacts
 clean:
-	rm -f $(BOOT_BIN) \
-	      $(ENTRY_OBJ) \
-	      $(KERNEL_OBJ) \
-	      $(KERNEL_ELF) \
-	      $(KERNEL_BIN) \
-	      $(IMAGE)
-
+	rm -f $(BOOT_BIN) $(ENTRY_OBJ) $(KERNEL_OBJ) $(KERNEL_ELF) $(KERNEL_BIN) $(IMAGE)
 
 # Rebuild everything
-
 rebuild: clean all
-
 
 .PHONY: all run clean rebuild

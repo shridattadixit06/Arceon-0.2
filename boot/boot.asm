@@ -1,6 +1,10 @@
 bits 16
 org 0x7c00
 
+%ifndef KERNEL_SECTORS
+    %define KERNEL_SECTORS 1
+%endif
+
 CODE_SEG equ 0x08
 DATA_SEG equ 0x10
 
@@ -33,7 +37,7 @@ load_kernel:
     mov bx, 0x8000
 
     mov ah, 0x02        ; BIOS read sectors
-    mov al, 0x01        ; Read 1 sector
+    mov al, KERNEL_SECTORS        ; Read 1 sector
     mov ch, 0x00        ; Cylinder 0
     mov cl, 0x02        ; Sector 2
     mov dh, 0x00        ; Head 0
