@@ -6,19 +6,19 @@ OBJCOPY  = objcopy
 QEMU     = qemu-system-i386
 
 # Compiler and linker flags
-CFLAGS = -m32 -ffreestanding -fno-pie -fno-pic -fno-asynchronous-unwind-tables
+CFLAGS  = -m32 -ffreestanding -fno-pie -fno-pic -fno-asynchronous-unwind-tables
 LDFLAGS = -m elf_i386 -T linker.ld
 
 # Output files
-BOOT_BIN   = boot.bin
-ENTRY_OBJ  = entry.o
-KERNEL_OBJ = kernel.o
-KERNEL_ELF = kernel.elf
-KERNEL_BIN = kernel.bin
-IMAGE      = arceon.img
-
-# Build limits
-MAX_KERNEL_SECTORS = 17
+BOOT_BIN    = boot.bin
+ENTRY_OBJ   = entry.o
+ISR_OBJ     = isr.o
+KERNEL_OBJ  = kernel.o
+IDT_OBJ     = idt.o
+EXCEPTION_OBJ = exception.o
+KERNEL_ELF  = kernel.elf
+KERNEL_BIN  = kernel.bin
+IMAGE       = arceon.img
 
 # Default target
 all: $(IMAGE)
@@ -27,13 +27,25 @@ all: $(IMAGE)
 $(ENTRY_OBJ): boot/entry.asm
 	$(ASM) -f elf32 $< -o $@
 
+# Assemble exception entry stubs
+$(ISR_OBJ): kernel/isr.asm
+	$(ASM) -f elf32 $< -o $@
+
 # Compile kernel
-$(KERNEL_OBJ): kernel/kernel.c
+$(KERNEL_OBJ): kernel/kernel.c kernel/idt.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile IDT implementation
+$(IDT_OBJ): kernel/idt.c kernel/idt.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile exception handler
+$(EXCEPTION_OBJ): kernel/exception.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Link kernel
-$(KERNEL_ELF): $(ENTRY_OBJ) $(KERNEL_OBJ) linker.ld
-	$(LD) $(LDFLAGS) -o $@ $(ENTRY_OBJ) $(KERNEL_OBJ)
+$(KERNEL_ELF): $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) linker.ld
+	$(LD) $(LDFLAGS) -o $@ $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ)
 
 # Convert ELF to raw binary
 $(KERNEL_BIN): $(KERNEL_ELF)
@@ -54,7 +66,7 @@ run: $(IMAGE)
 
 # Remove build artifacts
 clean:
-	rm -f $(BOOT_BIN) $(ENTRY_OBJ) $(KERNEL_OBJ) $(KERNEL_ELF) $(KERNEL_BIN) $(IMAGE)
+	rm -f $(BOOT_BIN) $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(KERNEL_ELF) $(KERNEL_BIN) $(IMAGE)
 
 # Rebuild everything
 rebuild: clean all
