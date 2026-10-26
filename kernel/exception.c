@@ -1,6 +1,24 @@
 #include <stdint.h>
 
-static volatile char *vga = (volatile char *)0xB8000;
+struct exception_frame
+{
+    uint32_t edi;
+    uint32_t esi;
+    uint32_t ebp;
+    uint32_t saved_esp;
+    uint32_t ebx;
+    uint32_t edx;
+    uint32_t ecx;
+    uint32_t eax;
+    uint32_t vector;
+    uint32_t error_code;
+    uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
+};
+
+static volatile uint16_t *vga =
+    (volatile uint16_t *)0xB8000;
 
 static const char *exception_names[32] = {
     "Divide Error",
@@ -37,27 +55,56 @@ static const char *exception_names[32] = {
     "Reserved"
 };
 
-void exception_handler(uint32_t vector)
+static int cursor;
+
+static void write_string(const char *text)
 {
-    const char *prefix = "ARCEON EXCEPTION: ";
-    int pos = 0;
-
-    for (int i = 0; prefix[i] != '\0'; i++)
+    while (*text)
     {
-        vga[pos * 2] = prefix[i];
-        vga[pos * 2 + 1] = 0x0C;
-        pos++;
+        vga[cursor++] = (uint16_t)*text++ | 0x0C00;
     }
+}
 
-    const char *name =
-        vector < 32 ? exception_names[vector] : "Unknown";
+static void write_hex(uint32_t value)
+{
+    const char digits[] = "0123456789ABCDEF";
 
-    for (int i = 0; name[i] != '\0'; i++)
+    for (int shift = 28; shift >= 0; shift -= 4)
     {
-        vga[pos * 2] = name[i];
-        vga[pos * 2 + 1] = 0x0C;
-        pos++;
+        vga[cursor++] =
+            (uint16_t)digits[(value >> shift) & 0xF]
+            | 0x0C00;
     }
+}
+
+void exception_handler(struct exception_frame *frame)
+{
+    cursor = 0;
+    for (int i = 0; i < 80 * 25; i++)
+    {
+        vga[i] = (uint16_t)' ' | 0x0700;
+    }
+    write_string("ARCEON EXCEPTION");
+    cursor = 80;
+
+    write_string("Vector: ");
+    write_hex(frame->vector);
+
+    cursor = 160;
+    write_string("Name: ");
+
+    if (frame->vector < 32)
+        write_string(exception_names[frame->vector]);
+    else
+        write_string("Unknown");
+
+    cursor = 240;
+    write_string("EIP: 0x");
+    write_hex(frame->eip);
+
+    cursor = 320;
+    write_string("Error: 0x");
+    write_hex(frame->error_code);
 
     for (;;)
     {

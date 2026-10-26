@@ -71,4 +71,9 @@ clean:
 # Rebuild everything
 rebuild: clean all
 
-.PHONY: all run clean rebuild
+test-exception:
+	$(MAKE) clean
+	$(MAKE) CFLAGS="$(CFLAGS) -DTEST_EXCEPTION=$(EXCEPTION)" run
+
+.PHONY: all run clean rebuild test-exception
+

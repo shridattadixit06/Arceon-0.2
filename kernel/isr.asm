@@ -59,8 +59,13 @@ isr_common:
     cld
     pushad
 
-    ; ESP + 32 points to the vector number.
-    mov eax, [esp + 32]
+    ; Pass a pointer to the saved exception frame.
+    mov eax, esp
+
+    ; Align the stack for the C function call.
+    and esp, 0xFFFFFFF0
+    sub esp, 12
+
     push eax
     call exception_handler
 
