@@ -35,7 +35,7 @@ void timer_init(uint32_t frequency)
         divisor = 65535;
 
     /* Register our callback for hardware IRQ0. */
-    extern void irq_register_handler(
+    void irq_register_handler(
         uint8_t irq,
         void (*callback)(void)
     );
