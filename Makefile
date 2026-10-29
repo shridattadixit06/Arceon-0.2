@@ -21,6 +21,7 @@ KERNEL_BIN  = kernel.bin
 IMAGE       = arceon.img
 PIC_OBJ = pic.o
 IRQ_OBJ = irq.o
+TIMER_OBJ = timer.o
 
 # Default target
 all: $(IMAGE)
@@ -51,10 +52,12 @@ $(PIC_OBJ): kernel/pic.c kernel/pic.h
 $(IRQ_OBJ): kernel/irq.c kernel/irq.h kernel/pic.h
 	$(CC) $(CFLAGS) -c kernel/irq.c -o $@
 
+timer.o: kernel/timer.c kernel/timer.h kernel/irq.h
+	$(CC) $(CFLAGS) -c kernel/timer.c -o $@
+
 # Link kernel
-# Link kernel
-$(KERNEL_ELF): $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) linker.ld
-	$(LD) $(LDFLAGS) -o $@ $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ)
+$(KERNEL_ELF): $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(TIMER_OBJ) linker.ld
+	$(LD) $(LDFLAGS) -o $@ $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(TIMER_OBJ)
 
 # Convert ELF to raw binary
 $(KERNEL_BIN): $(KERNEL_ELF)
@@ -74,9 +77,8 @@ run: $(IMAGE)
 	$(QEMU) -drive format=raw,file=$(IMAGE)
 
 # Remove build artifacts
-# Remove build artifacts
 clean:
-	rm -f $(BOOT_BIN) $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(KERNEL_ELF) $(KERNEL_BIN) $(IMAGE)
+	rm -f $(BOOT_BIN) $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(KERNEL_ELF) $(KERNEL_BIN) $(IMAGE) $(TIMER_OBJ)
 
 # Rebuild everything
 rebuild: clean all
