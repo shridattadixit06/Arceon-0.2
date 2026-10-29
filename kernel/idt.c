@@ -35,6 +35,22 @@ extern void isr28(void);
 extern void isr29(void);
 extern void isr30(void);
 extern void isr31(void);
+extern void irq0(void);
+extern void irq1(void);
+extern void irq2(void);
+extern void irq3(void);
+extern void irq4(void);
+extern void irq5(void);
+extern void irq6(void);
+extern void irq7(void);
+extern void irq8(void);
+extern void irq9(void);
+extern void irq10(void);
+extern void irq11(void);
+extern void irq12(void);
+extern void irq13(void);
+extern void irq14(void);
+extern void irq15(void);
 
 static struct idt_entry idt[IDT_ENTRIES];
 static struct idt_ptr idtr;
@@ -69,7 +85,12 @@ void idt_init(void)
         isr24, isr25, isr26, isr27,
         isr28, isr29, isr30, isr31
     };
-
+    void (*irq_handlers[16])(void) = {
+        irq0,  irq1,  irq2,  irq3,
+        irq4,  irq5,  irq6,  irq7,
+        irq8,  irq9,  irq10, irq11,
+        irq12, irq13, irq14, irq15
+    };
     /* Clear all 256 IDT entries first. */
     for (int i = 0; i < IDT_ENTRIES; i++)
     {
@@ -85,7 +106,12 @@ void idt_init(void)
     {
         idt_set_gate(i, (uint32_t)handlers[i]);
     }
-
+    
+    /* Register hardware IRQ handlers 32–47. */
+    for (int i = 0; i < 16; i++)
+    {
+        idt_set_gate(32 + i, (uint32_t)irq_handlers[i]);
+    }
     idtr.limit = sizeof(idt) - 1;
     idtr.base = (uint32_t)idt;
 

@@ -73,3 +73,62 @@ isr_common:
     cli
     hlt
     jmp .hang
+
+
+; ----------------------------------------
+; Hardware IRQ stubs: vectors 32–47
+; ----------------------------------------
+
+extern irq_handler
+
+%macro IRQ_STUB 2
+global irq%1
+irq%1:
+    push dword 0
+    push dword %2
+    jmp irq_common
+%endmacro
+
+IRQ_STUB 0, 32
+IRQ_STUB 1, 33
+IRQ_STUB 2, 34
+IRQ_STUB 3, 35
+IRQ_STUB 4, 36
+IRQ_STUB 5, 37
+IRQ_STUB 6, 38
+IRQ_STUB 7, 39
+IRQ_STUB 8, 40
+IRQ_STUB 9, 41
+IRQ_STUB 10, 42
+IRQ_STUB 11, 43
+IRQ_STUB 12, 44
+IRQ_STUB 13, 45
+IRQ_STUB 14, 46
+IRQ_STUB 15, 47
+
+
+irq_common:
+    cld
+    pushad
+
+    ; Preserve the original saved-register frame.
+    mov ebp, esp
+
+    ; Align the stack for the C function call.
+    and esp, 0xFFFFFFF0
+    sub esp, 12
+
+    ; Pass the IRQ vector to the C handler.
+    push dword [ebp + 32]
+    call irq_handler
+
+    ; Restore the original saved-register frame.
+    mov esp, ebp
+    popad
+
+    ; Discard the dummy error code and vector.
+    add esp, 8
+
+    ; Return to the interrupted code.
+    iret
+
