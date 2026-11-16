@@ -20,13 +20,14 @@ PIC_OBJ       = pic.o
 IRQ_OBJ       = irq.o
 TIMER_OBJ     = timer.o
 KEYBOARD_OBJ  = keyboard.o
+SHELL_OBJ = shell.o
 
 KERNEL_ELF = kernel.elf
 KERNEL_BIN = kernel.bin
 IMAGE      = arceon.img
 
 # All kernel objects
-KERNEL_OBJECTS = $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(TIMER_OBJ) $(KEYBOARD_OBJ)
+KERNEL_OBJECTS = $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(TIMER_OBJ) $(KEYBOARD_OBJ) $(SHELL_OBJ)
 
 # Default target
 all: $(IMAGE)
@@ -67,6 +68,8 @@ $(TIMER_OBJ): kernel/src/timer.c kernel/include/timer.h kernel/include/irq.h
 $(KEYBOARD_OBJ): kernel/src/keyboard.c kernel/include/keyboard.h kernel/include/irq.h kernel/include/pic.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(SHELL_OBJ): kernel/src/shell.c kernel/include/shell.h kernel/include/keyboard.h kernel/include/timer.h
+	$(CC) $(CFLAGS) -c $< -o $@
 # Link kernel
 $(KERNEL_ELF): $(KERNEL_OBJECTS) linker.ld
 	$(LD) $(LDFLAGS) -o $@ $(KERNEL_OBJECTS)
@@ -90,7 +93,7 @@ run: $(IMAGE)
 
 # Remove build artifacts
 clean:
-	rm -f $(BOOT_BIN) $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(TIMER_OBJ) $(KEYBOARD_OBJ) $(KERNEL_ELF) $(KERNEL_BIN) $(IMAGE)
+	rm -f $(BOOT_BIN) $(ENTRY_OBJ) $(ISR_OBJ) $(KERNEL_OBJ) $(IDT_OBJ) $(EXCEPTION_OBJ) $(PIC_OBJ) $(IRQ_OBJ) $(TIMER_OBJ) $(KEYBOARD_OBJ) $(KERNEL_ELF) $(KERNEL_BIN) $(IMAGE) $(SHELL_OBJ)
 
 # Rebuild everything
 rebuild: clean all

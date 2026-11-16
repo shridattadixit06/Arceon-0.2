@@ -6,21 +6,31 @@ SECTIONS
 
     .text :
     {
-        *(.text)
+        *(.text*)
     }
 
     .rodata :
     {
-        *(.rodata)
+        *(.rodata*)
     }
 
     .data :
     {
-        *(.data)
+        *(.data*)
     }
 
-    .bss :
+    .bss (NOLOAD) :
     {
-        *(.bss)
+        . = ALIGN(4);
+        __bss_start = .;
+
+        *(.bss*)
+        *(COMMON)
+
+        . = ALIGN(4);
+        __bss_end = .;
     }
+
+    ASSERT(__bss_end < 0x90000,
+           "Kernel BSS overlaps the stack")
 }
